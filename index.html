@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vacatureoverzicht – Week 29 juni – 6 juli 2026</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 20px;
+    }
+    header h1 { font-size: 26px; font-weight: 700; color: #f0f6fc; margin-bottom: 5px; }
+    header p  { font-size: 13px; color: #8b949e; }
+
+    .badge-week {
+      display: inline-block;
+      background: #1f6feb22; border: 1px solid #1f6feb66;
+      color: #58a6ff; font-size: 12px; font-weight: 600;
+      padding: 2px 10px; border-radius: 20px; margin-bottom: 10px;
+    }
+
+    /* ── Top bar: toc + view toggle ── */
+    .topbar {
+      max-width: 1100px; margin: 0 auto 32px;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+    .toc { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+    .toc a {
+      display: flex; align-items: center; gap: 7px;
+      text-decoration: none; background: #161b22;
+      border: 1px solid #30363d; border-radius: 8px;
+      padding: 6px 12px; font-size: 12px; color: #58a6ff;
+      transition: border-color .15s, background .15s;
+    }
+    .toc a:hover { background: #1f2a38; border-color: #58a6ff; }
+    .toc .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+    .view-toggle {
+      display: flex; border: 1px solid #30363d; border-radius: 8px; overflow: hidden;
+    }
+    .view-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: #161b22; border: none; color: #8b949e;
+      padding: 7px 14px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background .15s, color .15s;
+    }
+    .view-btn + .view-btn { border-left: 1px solid #30363d; }
+    .view-btn.active { background: #1f6feb; color: #fff; }
+    .view-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── Card view ── */
+    #view-cards { display: block; }
+    #view-list  { display: none; }
+
+    .section { max-width: 1100px; margin: 0 auto 44px; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .section-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+    .section-title { font-size: 19px; font-weight: 700; color: #f0f6fc; }
+    .section-count {
+      font-size: 11px; font-weight: 600; color: #8b949e;
+      background: #21262d; border: 1px solid #30363d;
+      border-radius: 20px; padding: 1px 9px;
+    }
+    .section-source { font-size: 12px; color: #8b949e; margin-left: auto; }
+    .section-source a { color: #58a6ff; text-decoration: none; }
+    .section-source a:hover { text-decoration: underline; }
+
+    /* Featured */
+    .featured-section {
+      max-width: 1100px; margin: 0 auto 44px;
+      background: linear-gradient(135deg, #1a1f2e 0%, #161b22 100%);
+      border: 1px solid #388bfd55;
+      border-radius: 12px; padding: 20px 24px;
+    }
+    .featured-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .featured-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #1f6feb33; border: 1px solid #388bfd66;
+      color: #79c0ff; font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px; letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .featured-title { font-size: 17px; font-weight: 700; color: #f0f6fc; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 500px) { .cards { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+      padding: 16px 18px; display: flex; flex-direction: column; gap: 7px;
+      transition: border-color .15s, transform .1s;
+    }
+    .card.featured-card {
+      background: #0d1117; border-color: #388bfd55;
+    }
+    .card:hover { border-color: #58a6ff55; transform: translateY(-1px); }
+
+    .card-title { font-size: 14px; font-weight: 600; color: #f0f6fc; line-height: 1.35; }
+    .card-meta  { display: flex; flex-wrap: wrap; gap: 5px; }
+
+    .tag {
+      font-size: 11px; font-weight: 500;
+      padding: 2px 8px; border-radius: 20px; border: 1px solid transparent;
+    }
+    .tag-dept     { background: #21262d; border-color: #30363d; color: #8b949e; }
+    .tag-salary   { background: #1a2a1a; border-color: #2ea04322; color: #3fb950; }
+    .tag-hours    { background: #1f1a2e; border-color: #8957e522; color: #a78bfa; }
+    .tag-level    { background: #2a1a1a; border-color: #f7853422; color: #f08b47; }
+    .tag-deadline { background: #2a1f10; border-color: #e3b34122; color: #d29922; }
+    .tag-org      { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid transparent; }
+
+    .card-desc { font-size: 12px; color: #8b949e; line-height: 1.5; }
+
+    .card-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-top: 2px; font-size: 12px; font-weight: 600;
+      color: #58a6ff; text-decoration: none; width: fit-content;
+    }
+    .card-link:hover { text-decoration: underline; }
+    .card-link svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    .notice {
+      background: #161b22; border: 1px solid #30363d;
+      border-left: 3px solid #8957e5; border-radius: 8px;
+      padding: 12px 16px; font-size: 12px; color: #8b949e; margin-bottom: 12px;
+    }
+    .notice strong { color: #c9d1d9; }
+
+    .error-card {
+      background: #161b22; border: 1px dashed #30363d; border-radius: 10px;
+      padding: 18px; font-size: 13px; color: #8b949e;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    /* ── List view ── */
+    .list-toolbar {
+      max-width: 1100px; margin: 0 auto 14px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .list-toolbar span { font-size: 13px; color: #8b949e; flex: 1; }
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #21262d; border: 1px solid #30363d; border-radius: 7px;
+      color: #c9d1d9; font-size: 12px; font-weight: 600;
+      padding: 6px 14px; cursor: pointer; transition: background .15s, border-color .15s;
+    }
+    .copy-btn:hover { background: #2d333b; border-color: #58a6ff; }
+    .copy-btn svg { width: 13px; height: 13px; }
+    .copy-btn.copied { background: #1a2a1a; border-color: #3fb950; color: #3fb950; }
+
+    .table-wrap {
+      max-width: 1100px; margin: 0 auto;
+      overflow-x: auto;
+      border: 1px solid #30363d; border-radius: 10px;
+    }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 12.5px; white-space: nowrap;
+    }
+
+    thead th {
+      background: #161b22; color: #8b949e; font-weight: 600;
+      padding: 10px 12px; text-align: left;
+      border-bottom: 1px solid #30363d; position: sticky; top: 0;
+      cursor: pointer; user-select: none;
+    }
+    thead th:hover { color: #c9d1d9; }
+    thead th .sort-icon { margin-left: 4px; opacity: .4; font-size: 10px; }
+    thead th.sorted .sort-icon { opacity: 1; color: #58a6ff; }
+
+    tbody tr { border-bottom: 1px solid #21262d; transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #161b22; }
+    tbody tr.featured-row { background: #0d1a2e; }
+    tbody tr.featured-row:hover { background: #0f2035; }
+
+    tbody td { padding: 8px 12px; color: #c9d1d9; vertical-align: middle; }
+    tbody td.td-title { color: #f0f6fc; font-weight: 500; max-width: 260px; white-space: normal; line-height: 1.3; }
+    tbody td.td-org { font-weight: 600; }
+
+    .org-dot-inline {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; margin-right: 6px; vertical-align: middle;
+    }
+    .featured-star {
+      display: inline-block; background: #1f6feb33; border: 1px solid #388bfd66;
+      color: #79c0ff; font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 10px; margin-right: 6px;
+      vertical-align: middle; text-transform: uppercase; letter-spacing: .4px;
+    }
+
+    .tbl-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #58a6ff; text-decoration: none; font-weight: 600;
+    }
+    .tbl-link:hover { text-decoration: underline; }
+    .tbl-link svg { width: 11px; height: 11px; }
+
+    .salary-green { color: #3fb950; }
+    .deadline-yellow { color: #d29922; }
+
+    footer {
+      max-width: 1100px; margin: 40px auto 0;
+      border-top: 1px solid #30363d; padding-top: 18px;
+      font-size: 11px; color: #8b949e; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge-week">Week 29 juni – 6 juli 2026</div>
+  <h1>Vacatureoverzicht Eindhoven-regio</h1>
+  <p>Actuele vacatures van 5 organisaties · Gegenereerd op 6 juli 2026 · Publicatiedatum per vacature niet zichtbaar op bronpagina's</p>
+</header>
+
+<div class="topbar">
+  <nav class="toc" id="toc-nav"></nav>
+  <div class="view-toggle">
+    <button class="view-btn active" id="btn-cards" onclick="setView('cards')">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5Zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5Zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5Zm8 0A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5Z"/></svg>
+      Kaarten
+    </button>
+    <button class="view-btn" id="btn-list" onclick="setView('list')">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm3.75-1.5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5ZM3 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
+      Lijst
+    </button>
+  </div>
+</div>
+
+<!-- CARD VIEW -->
+<div id="view-cards"></div>
+
+<!-- LIST VIEW -->
+<div id="view-list">
+  <div class="list-toolbar">
+    <span id="list-count"></span>
+    <button class="copy-btn" id="copy-btn" onclick="copyTable()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+      Kopieer als tabel
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table id="vacancy-table">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">Functie <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(1)">Organisatie <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(2)">Afdeling <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(3)">Salaris <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(4)">Uren/FTE <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(5)">Locatie <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(6)">Niveau <span class="sort-icon">↕</span></th>
+          <th onclick="sortTable(7)">Deadline <span class="sort-icon">↕</span></th>
+          <th>Link</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  Gegenereerd op 6 juli 2026 · Bronnen: TU/e, Fontys, Summa, Gemeente Eindhoven, DBRE · Alle links openen in een nieuw tabblad
+</footer>
+
+<script>
+const ORGS = {
+  "TU/e":               { color: "#f78166", anchor: "tue",       source: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/" },
+  "Fontys":             { color: "#58a6ff", anchor: "fontys",    source: "https://werkenbijfontys.nl/fontys/vacatures/" },
+  "Summa":              { color: "#3fb950", anchor: "summa",     source: "https://summa-onderwijs.nl/vacatures/" },
+  "Gemeente Eindhoven": { color: "#d29922", anchor: "eindhoven", source: "https://www.werkenvooreindhoven.nl/vacature" },
+  "DBRE":               { color: "#8b949e", anchor: "dbre",      source: "https://werkenbij.dbre.nl/vacaturebeschrijvingen/actuele-vacatures" },
+};
+
+const VACANCIES = [
+  // ── FEATURED: Marketing ──────────────────────────────────────────────────
+  {
+    featured: true,
+    title: "Online Marketeer (0,8–1,0 FTE)",
+    org: "Summa", dept: "Economie en Ondernemen",
+    salary: "€3.344 – €4.948", hours: "0,8–1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/online-marketeer-mbo-eindhoven-08-10-fte/",
+    desc: "Online marketeer voor Summa, verantwoordelijk voor digitale communicatie, social media en campagnes. Werkt aan studentenwerving en merkbekendheid van de MBO-instelling.",
+  },
+
+  // ── TU/e ─────────────────────────────────────────────────────────────────
+  {
+    title: "11 PhD-posities – Excellence & Sustainability Programme (Mechanics of Materials)",
+    org: "TU/e", dept: "Mechanical Engineering",
+    salary: "€3.059 – €3.881", hours: "Voltijd", location: "Eindhoven", level: "PhD",
+    deadline: "30-09-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/phd-in-the-excellence-sustainability-programme-of-the-section-mechanics-of-materials-of-tue",
+    desc: "Meerdere promotieplaatsen binnen het Excellence & Sustainability Programme. Onderzoek naar duurzame materiaalkunde en werktuigbouwkunde.",
+  },
+  {
+    title: "Postdoctoral Researcher – Synchromodal Transport Networks for Construction Logistics",
+    org: "TU/e", dept: "Industrial Engineering & Innovation Sciences",
+    salary: "€3.546 – €5.538", hours: "Voltijd", location: "Eindhoven", level: "Postdoc",
+    deadline: "16-07-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/a-postdoctoral-researcher-on-optimizing-synchromodal-transport-networks-for-construction-logistics",
+    desc: "Postdoc-onderzoek naar optimalisatie van synchromodale transportnetwerken voor bouwlogistiek.",
+  },
+  {
+    title: "Assistant Professor – Dynamics and Computational Design of High-Tech Systems",
+    org: "TU/e", dept: "Mechanical Engineering",
+    salary: "€4.728 – €6.433", hours: "Voltijd", location: "Eindhoven", level: "UD",
+    deadline: "23-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-professor-in-dynamics-and-computational-design-of-high-tech-systems",
+    desc: "UD in dynamica en rekenkundig ontwerp van high-tech systemen. Combinatie van onderwijs en onderzoek.",
+  },
+  {
+    title: "Assistant Professor – Explainable Networked Systems",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€4.728 – €6.433", hours: "Voltijd", location: "Eindhoven", level: "UD",
+    deadline: "15-09-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-professor-in-explainable-networked-systems",
+    desc: "Onderzoek en onderwijs gericht op begrijpelijke gedistribueerde systemen en netwerken.",
+  },
+  {
+    title: "Assistant Professor – Formal Methods and Neuro-Symbolic AI",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€4.728 – €6.433", hours: "Voltijd", location: "Eindhoven", level: "UD",
+    deadline: "02-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-professor-in-formal-methods-and-neuro-symbolic-ai",
+    desc: "Positie aan het snijvlak van formele verificatie en neuro-symbolische AI.",
+  },
+  {
+    title: "Assistant Professor – Sustainable Agentic AI",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€4.728 – €6.433", hours: "Voltijd", location: "Eindhoven", level: "UD",
+    deadline: "02-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-professor-in-sustainable-agentic-ai",
+    desc: "Onderzoeks- en onderwijspositie gericht op duurzame agentische AI-systemen.",
+  },
+  {
+    title: "Assistant Professors – Language and AI Engineering",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€4.728 – €6.433", hours: "Voltijd", location: "Eindhoven", level: "UD",
+    deadline: "15-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-professors-in-language-and-ai-engineering",
+    desc: "Meerdere UD-posities in taal- en AI-engineering. NLP, LLM's en taaltechnologieën.",
+  },
+  {
+    title: "Assistant Professors – Mission-Driven Research on Future-Proof Networks",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€4.728 – €6.433", hours: "Voltijd", location: "Eindhoven", level: "UD",
+    deadline: "15-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-professors-in-mission-driven-research-on-future-proof-networks",
+    desc: "Toekomstgerichte netwerksystemen met een missiegedreven onderzoeksprofiel.",
+  },
+  {
+    title: "Assistant-Associate Professor – Biomechanics of Regenerative Implants",
+    org: "TU/e", dept: "Biomedical Engineering",
+    salary: "€4.728 – €8.673", hours: "Voltijd", location: "Eindhoven", level: "UD/UHD",
+    deadline: "31-07-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/assistant-associate-professor-in-biomechanics-of-regenerative-implants",
+    desc: "Gecombineerde UD/UHD-positie gericht op biomechanica van regeneratieve implantaten.",
+  },
+  {
+    title: "Associate or Full Professor – Language and AI Engineering",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€6.512 – €8.673", hours: "Voltijd", location: "Eindhoven", level: "UHD/Hgl",
+    deadline: "15-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/associate-or-full-professor-in-language-and-ai-engineering",
+    desc: "Seniorpositie op UHD of hoogleraarsniveau in taal- en AI-engineering.",
+  },
+  {
+    title: "Associate Professor – Generative AI",
+    org: "TU/e", dept: "Mathematics & Computer Science",
+    salary: "€6.512 – €8.673", hours: "Voltijd", location: "Eindhoven", level: "UHD",
+    deadline: "16-08-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/associate-professor-in-generative-ai",
+    desc: "UHD-positie gericht op generatieve AI. Leiding van onderzoekslijn rondom grote generatieve modellen.",
+  },
+  {
+    title: "Bouwkundig Adviseur",
+    org: "TU/e", dept: "Campus & Facilities",
+    salary: "€3.546 – €5.538", hours: "Voltijd", location: "Eindhoven", level: "HBO",
+    deadline: "23-07-2026",
+    url: "https://www.tue.nl/werken-bij-tue/vacatureoverzicht/bouwkundig-adviseur",
+    desc: "Bouwkundige adviestaken op de TU/e-campus. Betrokken bij renovatie, nieuwbouw en technisch vastgoedbeheer.",
+  },
+
+  // ── Fontys ───────────────────────────────────────────────────────────────
+  {
+    title: "Docent / Coach Fontys Pedagogiek",
+    org: "Fontys", dept: "Fontys Pedagogiek",
+    salary: "–", hours: "24 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/docent-coach-fontys-pedagogiek-1310163/",
+    desc: "Docent/coach die studenten begeleidt in leerproces en professionele ontwikkeling.",
+  },
+  {
+    title: "Studieleider Docent Beeldende Kunst en Vormgeving",
+    org: "Fontys", dept: "Fontys Academy of the Arts",
+    salary: "–", hours: "40 uur/week", location: "Tilburg", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/studieleider-docent-beeldende-kunst-en-vormgeving-1307184/",
+    desc: "Gecombineerde rol als studieleider en docent. Verantwoordelijk voor curriculumontwikkeling en teamaansturing.",
+  },
+  {
+    title: "Onderwijsmanager – Teamontwikkeling & Personeelsportefeuille",
+    org: "Fontys", dept: "Fontys Pedagogiek",
+    salary: "–", hours: "32 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/onderwijsmanager-met-focus-op-teamontwikkeling-en-personeelsportefeuille-1318167/",
+    desc: "Leidinggevende rol met focus op teamontwikkeling en HR-vraagstukken.",
+  },
+  {
+    title: "Docent Elektrotechniek",
+    org: "Fontys", dept: "Fontys Technology",
+    salary: "–", hours: "32–40 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/docent-elektrotechniek-1312265/",
+    desc: "Vakdocent elektrotechniek voor HBO Electrical Engineering. Lessen en praktijkbegeleiding.",
+  },
+  {
+    title: "Docent Chinese Schrijfvaardigheid",
+    org: "Fontys", dept: "Fontys Educatie",
+    salary: "–", hours: "8 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/docent-chinese-schrijfvaardigheid-1313328/",
+    desc: "Parttime docent Chinese schrijfvaardigheid. Gericht op karakter-schrijven en schriftelijke uitdrukkingsvaardigheid.",
+  },
+  {
+    title: "Roostermaker Fontys Technology",
+    org: "Fontys", dept: "Fontys Technology",
+    salary: "–", hours: "16–40 uur/week", location: "Eindhoven", level: "MBO/HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/roostermaker-fontys-technology-1304339/",
+    desc: "Verantwoordelijk voor roosters voor opleidingen binnen Fontys Technology.",
+  },
+  {
+    title: "Strategisch Regisseur Inkoop",
+    org: "Fontys", dept: "Fontys Financiën & Inkoop",
+    salary: "–", hours: "32–40 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/strategisch-regisseur-inkoop-1312636/",
+    desc: "Strategische inkoopfunctie. Leiding aan inkoopprocessen, contractbeheer en leveranciersstrategie.",
+  },
+  {
+    title: "Docent-Coach HBO Rechten (0,7–0,9 FTE)",
+    org: "Fontys", dept: "Juridische Hogeschool Avans & Fontys",
+    salary: "–", hours: "28–36 uur/week", location: "Tilburg", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/docent-coach-hbo-rechten-07-09-fte-1317568/",
+    desc: "Docent en coach binnen de HBO Rechtsopleiding. Hoorcolleges, werkgroepen en studiebegeleiding.",
+  },
+  {
+    title: "Docent/Coach Pedagogiek – Jeugdhulp/Zorg",
+    org: "Fontys", dept: "Fontys Pedagogiek",
+    salary: "–", hours: "24 uur/week", location: "Tilburg", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/docent-coach-pedagogiek-met-jeugdhulp-zorg-ervaring-1309358/",
+    desc: "Docent pedagogiek met ervaring in jeugdhulp of zorgsector.",
+  },
+  {
+    title: "Tutor Practice Architecture/Urbanism",
+    org: "Fontys", dept: "Fontys Academy of the Arts",
+    salary: "–", hours: "8–12 uur/week", location: "Tilburg", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/tutor-practice-architecture-urbanism-1289249/",
+    desc: "Parttime tutorfunctie in architectuur en stedenbouw. Begeleiding van studenten in studioprojecten.",
+  },
+  {
+    title: "Subsidieconsultant",
+    org: "Fontys", dept: "Fontys Onderwijs & Onderzoek",
+    salary: "–", hours: "32–40 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/subsidieconsultant-1308368/",
+    desc: "Adviseur subsidieaanvragen voor onderwijsinnovatie en onderzoeksprojecten.",
+  },
+  {
+    title: "Information Security Officer",
+    org: "Fontys", dept: "Fontys Informatievoorziening & Technologie",
+    salary: "–", hours: "36–40 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "–",
+    url: "https://werkenbijfontys.nl/jobs/information-security-officer-1294538/",
+    desc: "ISO-rol verantwoordelijk voor informatiebeveiliging binnen de gehele Fontys-organisatie.",
+  },
+
+  // ── Summa ────────────────────────────────────────────────────────────────
+  {
+    title: "Docent Verpleegkunde (0,6 FTE)",
+    org: "Summa", dept: "Zorg en Welzijn",
+    salary: "€3.713 – €6.210", hours: "0,6 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/docent-verpleegkunde-mbo-eindhoven-06-fte/",
+    desc: "MBO-docent verpleegkunde. Geeft les aan aankomende verpleegkundigen en begeleidt praktijkleren.",
+  },
+  {
+    title: "Docent Optiek (0,4–1,0 FTE)",
+    org: "Summa", dept: "Beauty & Lifestyle",
+    salary: "€3.713 – €5.495", hours: "0,4–1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/docent-optiek-mbo-eindhoven-04-10-fte/",
+    desc: "Docent voor de MBO-opleiding Opticien. Theorie en praktijklessen rond oogmetingen en glazenadvies.",
+  },
+  {
+    title: "Docent Sport VeVa (0,6 FTE)",
+    org: "Summa", dept: "Veiligheid",
+    salary: "€3.713 – €5.495", hours: "0,6 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/docent-sport-veva-eindhoven-06-fte/",
+    desc: "Docent voor het VeVa-programma Sport. Combineert sportonderwijs met beroepsoriëntatie.",
+  },
+  {
+    title: "Instructeur Automotive (0,6–1,0 FTE)",
+    org: "Summa", dept: "Automotive",
+    salary: "€2.650 – €4.948", hours: "0,6–1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/instructeur-automotive-eindhoven-06-10-fte/",
+    desc: "Praktijkinstructeur automotive. Lessen in de werkplaats en begeleiding bij onderhoud en reparatie.",
+  },
+  {
+    title: "Docent Duurzame & Slimme Mobiliteit (0,4–1,0 FTE)",
+    org: "Summa", dept: "Transport & Logistiek",
+    salary: "€3.713 – €5.495", hours: "0,4–1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/docent-duurzame-slimme-mobiliteit/",
+    desc: "Docent duurzame mobiliteitsoplossingen. Elektrisch rijden, slimme infrastructuur en multimodaal transport.",
+  },
+  {
+    title: "Docent/Instructeur Bedrijfsautotechniek VeVa (0,8–1,0 FTE, tijdelijk)",
+    org: "Summa", dept: "Veiligheid",
+    salary: "€3.713 – €5.495", hours: "0,8–1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/docent-instructeur-veva-bedrijfsautotechniek/",
+    desc: "Tijdelijke functie als docent/instructeur bedrijfsautotechniek binnen het VeVa-programma.",
+  },
+  {
+    title: "Contractmanager (1,0 FTE)",
+    org: "Summa", dept: "Economie en Ondernemen",
+    salary: "€3.713 – €6.210", hours: "1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/contractmanager-mbo-eindhoven-10-fte/",
+    desc: "Contractmanager verantwoordelijk voor inkoop- en leverancierscontracten bij Summa.",
+  },
+  {
+    title: "Docent Nederlands (0,3–1,0 FTE)",
+    org: "Summa", dept: "Bouw",
+    salary: "€3.713 – €5.495", hours: "0,3–1,0 FTE", location: "Veldhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/docent-nederlands-mbo-veldhoven-03-10-fte/",
+    desc: "Docent Nederlands voor MBO-studenten in de bouwsector. Taalvaardigheid en beroepscommunicatie.",
+  },
+  {
+    title: "Instructeur Onderhoud & Klusbedrijf (1,0 FTE)",
+    org: "Summa", dept: "Bouw",
+    salary: "€3.344 – €4.948", hours: "1,0 FTE", location: "Eindhoven", level: "MBO",
+    deadline: "–",
+    url: "https://summa-onderwijs.nl/vacatures/instructeur-onderhoud-klusbedrijf-mbo-eindhoven-10-fte/",
+    desc: "Praktijkinstructeur voor MBO-studenten die worden opgeleid tot allround onderhoudsmonteur.",
+  },
+
+  // ── Gemeente Eindhoven ───────────────────────────────────────────────────
+  {
+    title: "Adviseur Verkeer en Parkeren",
+    org: "Gemeente Eindhoven", dept: "Mobiliteit",
+    salary: "€3.824 – €5.624", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "20-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/adviseur-verkeer-en-parkeren",
+    desc: "Adviseur op het gebied van verkeer en parkeerbeleid. Draagt bij aan bereikbaarheid en veiligheid.",
+  },
+  {
+    title: "Adviseur Veilige Mobiliteit",
+    org: "Gemeente Eindhoven", dept: "Mobiliteit",
+    salary: "€4.520 – €6.422", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/adviseur-veilige-mobiliteit",
+    desc: "Beleidsadviseur veilige mobiliteit. Verkeersveiligheidsplannen, risicoanalyses en samenwerking.",
+  },
+  {
+    title: "Adviseur Verkeersmodellen",
+    org: "Gemeente Eindhoven", dept: "Mobiliteit",
+    salary: "€4.520 – €6.422", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/adviseur-verkeersmodellen",
+    desc: "Specialist verkeersmodellering. Analyseert verkeersstromen en rekent toekomstscenario's door.",
+  },
+  {
+    title: "Specialist Arbeidsparticipatie en Inburgering",
+    org: "Gemeente Eindhoven", dept: "Werk & Inkomen",
+    salary: "€3.568 – €5.096", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/specialist-arbeidsparticipatie-en-inburgering-3",
+    desc: "Begeleidt nieuwkomers en uitkeringsgerechtigden naar werk en inburgering.",
+  },
+  {
+    title: "Secretarieel Medewerker Werkcentrum Zuidoost Brabant",
+    org: "Gemeente Eindhoven", dept: "Werk & Inkomen",
+    salary: "€2.875 – €4.065", hours: "24–32 uur/week", location: "Eindhoven", level: "MBO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/secretarieel-medewerker-werkcentrum-zuidoost-brabant-1",
+    desc: "Secretariële ondersteuning voor het Werkcentrum Zuidoost Brabant.",
+  },
+  {
+    title: "Sectorhoofd Juridische Zaken & Inkoop / CPO",
+    org: "Gemeente Eindhoven", dept: "Juridisch & Inkoop",
+    salary: "€6.762 – €9.385", hours: "32–36 uur/week", location: "Eindhoven", level: "WO",
+    deadline: "11-08-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/sectorhoofd-juridische-zaken-inkoopchief-procurement-officer",
+    desc: "Directielid verantwoordelijk voor juridische zaken en inkoop. Combineert CPO-taken met juridisch leiderschap.",
+  },
+  {
+    title: "Senior Casemanager Omgevingsvergunningen",
+    org: "Gemeente Eindhoven", dept: "Vergunningen",
+    salary: "Tot €5.624", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/senior-casemanager-omgevingsvergunningen",
+    desc: "Coördineert en handelt complexe omgevingsvergunningaanvragen af.",
+  },
+  {
+    title: "Sectorhoofd Belastingen en Financieel Beheer",
+    org: "Gemeente Eindhoven", dept: "Financiën",
+    salary: "€6.310 – €8.580", hours: "32–36 uur/week", location: "Eindhoven", level: "WO",
+    deadline: "11-08-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/sectorhoofd-belastingen-en-financieel-beheer",
+    desc: "Leidinggevende voor gemeentelijke belastingen en financieel beheer.",
+  },
+  {
+    title: "Stagiair Stedenbouw",
+    org: "Gemeente Eindhoven", dept: "Ruimtelijke Ordening",
+    salary: "€570/maand", hours: "24–32 uur/week", location: "Eindhoven", level: "WO",
+    deadline: "07-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/stagiair-stedenbouw",
+    desc: "Stageplaats stedenbouw. Werkt mee aan stedenbouwkundige plannen en gebiedsontwikkeling.",
+  },
+  {
+    title: "Executive Projectmanager Ruimtelijke Projecten",
+    org: "Gemeente Eindhoven", dept: "Ruimtelijke Ordening",
+    salary: "€5.958 – €7.837", hours: "32–36 uur/week", location: "Eindhoven", level: "WO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/executive-projectmanager-ruimtelijke-projecten",
+    desc: "Eindverantwoordelijk projectmanager voor grote ruimtelijke projecten. Stuurt multidisciplinaire teams aan.",
+  },
+  {
+    title: "Senior Projectmanager Ruimtelijke Projecten",
+    org: "Gemeente Eindhoven", dept: "Ruimtelijke Ordening",
+    salary: "–", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "13-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/senior-projectmanager-ruimtelijke-projecten",
+    desc: "Senior projectmanager voor gebiedsontwikkeling, herinrichting en stedelijke transformatie.",
+  },
+  {
+    title: "Risicomanager Ruimtelijke Projecten en Programma's",
+    org: "Gemeente Eindhoven", dept: "Ruimtelijke Ordening",
+    salary: "€3.824 – €5.624", hours: "32–36 uur/week", location: "Eindhoven", level: "HBO",
+    deadline: "09-07-2026",
+    url: "https://www.werkenvooreindhoven.nl/vacature/risicomanager-ruimtelijke-projecten-en-programmas",
+    desc: "Identificeert, analyseert en beheerst risico's binnen grote ruimtelijke projecten.",
+  },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const EXT_ICON = `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13 4.487l-5.22 5.22a.749.749 0 0 1-1.06-1.06l5.22-5.22-1.086-1.086A.25.25 0 0 1 10.604 2Z"/></svg>`;
+
+function tag(cls, text) {
+  return text && text !== '–' ? `<span class="tag ${cls}">${text}</span>` : '';
+}
+
+function cardHTML(v, extraClass = '') {
+  const org = ORGS[v.org];
+  return `
+    <div class="card ${extraClass}">
+      <div class="card-title">${v.title}</div>
+      <div class="card-meta">
+        ${tag('tag-dept', v.dept)}
+        ${tag('tag-salary', v.salary)}
+        ${tag('tag-hours', v.hours)}
+        ${tag('tag-level', v.level)}
+        ${tag('tag-deadline', v.deadline !== '–' ? 'Deadline: ' + v.deadline : '')}
+        ${extraClass ? `<span class="tag tag-org" style="background:${org.color}22;border-color:${org.color}44;color:${org.color}">${v.org}</span>` : ''}
+      </div>
+      <p class="card-desc">${v.desc}</p>
+      <a class="card-link" href="${v.url}" target="_blank">Bekijk vacature ${EXT_ICON}</a>
+    </div>`;
+}
+
+// ── Build card view ───────────────────────────────────────────────────────────
+
+function buildCards() {
+  const container = document.getElementById('view-cards');
+  let html = '';
+
+  // Featured section
+  const featured = VACANCIES.filter(v => v.featured);
+  html += `
+    <div class="featured-section">
+      <div class="featured-header">
+        <span class="featured-badge">⭐ Featured</span>
+        <span class="featured-title">Marketing vacatures</span>
+      </div>
+      <div class="cards">
+        ${featured.map(v => cardHTML(v, 'featured-card')).join('')}
+      </div>
+    </div>`;
+
+  // Per-org sections (non-featured)
+  const orgNames = [...new Set(VACANCIES.filter(v => !v.featured).map(v => v.org))];
+  orgNames.forEach(orgName => {
+    const org = ORGS[orgName];
+    if (orgName === 'DBRE') {
+      html += `
+        <section class="section" id="${org.anchor}">
+          <div class="section-header">
+            <div class="section-dot" style="background:${org.color};"></div>
+            <h2 class="section-title">DBRE (Dienst Belastingen Regio Eindhoven)</h2>
+            <span class="section-source"><a href="${org.source}" target="_blank">Bekijk alle →</a></span>
+          </div>
+          <div class="error-card">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="#8b949e"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>
+            <span>De vacatures van DBRE worden dynamisch geladen via JavaScript en zijn niet toegankelijk via statische opvraag. Bezoek de <a href="${org.source}" target="_blank" style="color:#58a6ff;">DBRE-vacaturepagina</a> direct voor actuele vacatures.</span>
+          </div>
+        </section>`;
+      return;
+    }
+
+    const items = VACANCIES.filter(v => v.org === orgName && !v.featured);
+    const orgLabel = orgName === 'TU/e' ? 'Technische Universiteit Eindhoven'
+                   : orgName === 'Fontys' ? 'Fontys Hogescholen'
+                   : orgName === 'Summa' ? 'Summa Onderwijs (MBO)'
+                   : 'Gemeente Eindhoven';
+
+    html += `
+      <section class="section" id="${org.anchor}">
+        <div class="section-header">
+          <div class="section-dot" style="background:${org.color};"></div>
+          <h2 class="section-title">${orgLabel}</h2>
+          <span class="section-count">${items.length} vacatures</span>
+          <span class="section-source"><a href="${org.source}" target="_blank">Bekijk alle →</a></span>
+        </div>
+        <div class="notice">Publicatiedatums zijn niet zichtbaar op de bronpagina. Onderstaande vacatures zijn actueel per 6 juli 2026.</div>
+        <div class="cards">${items.map(v => cardHTML(v)).join('')}</div>
+      </section>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ── Build TOC ─────────────────────────────────────────────────────────────────
+
+function buildToc() {
+  const nav = document.getElementById('toc-nav');
+  const featured = VACANCIES.filter(v => v.featured);
+  let html = `<a href="#featured"><span class="dot" style="background:#f0c040;"></span>⭐ Featured (${featured.length})</a>`;
+
+  const counts = {};
+  VACANCIES.filter(v => !v.featured).forEach(v => { counts[v.org] = (counts[v.org] || 0) + 1; });
+
+  Object.entries(ORGS).forEach(([name, o]) => {
+    const c = counts[name];
+    html += `<a href="#${o.anchor}"><span class="dot" style="background:${o.color};"></span>${name}${c ? ` (${c})` : ''}</a>`;
+  });
+
+  nav.innerHTML = html;
+}
+
+// ── Build list/table view ─────────────────────────────────────────────────────
+
+let sortCol = -1, sortAsc = true;
+
+function buildTable(data) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = data.map(v => {
+    const org = ORGS[v.org];
+    const featuredMark = v.featured ? `<span class="featured-star">Featured</span>` : '';
+    const dot = `<span class="org-dot-inline" style="background:${org.color};"></span>`;
+    return `<tr class="${v.featured ? 'featured-row' : ''}">
+      <td class="td-title">${featuredMark}${v.title}</td>
+      <td class="td-org">${dot}${v.org}</td>
+      <td>${v.dept}</td>
+      <td class="salary-green">${v.salary}</td>
+      <td>${v.hours}</td>
+      <td>${v.location}</td>
+      <td>${v.level}</td>
+      <td class="deadline-yellow">${v.deadline}</td>
+      <td><a class="tbl-link" href="${v.url}" target="_blank">Open ${EXT_ICON}</a></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('list-count').textContent =
+    `${data.length} vacatures`;
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+
+  // Update header icons
+  document.querySelectorAll('thead th').forEach((th, i) => {
+    th.classList.toggle('sorted', i === col);
+    const ic = th.querySelector('.sort-icon');
+    if (ic) ic.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
+  });
+
+  const keys = ['title','org','dept','salary','hours','location','level','deadline'];
+  const sorted = [...VACANCIES].sort((a, b) => {
+    // Featured always on top, then sort within groups
+    if (a.featured !== b.featured) return a.featured ? -1 : 1;
+    const va = (a[keys[col]] || '').toString();
+    const vb = (b[keys[col]] || '').toString();
+    return sortAsc ? va.localeCompare(vb, 'nl') : vb.localeCompare(va, 'nl');
+  });
+  buildTable(sorted);
+}
+
+// ── Copy table as TSV ─────────────────────────────────────────────────────────
+
+function copyTable() {
+  const headers = ['Functie','Organisatie','Afdeling','Salaris','Uren/FTE','Locatie','Niveau','Deadline','URL'];
+  const rows = VACANCIES.map(v =>
+    [v.title, v.org, v.dept, v.salary, v.hours, v.location, v.level, v.deadline, v.url].join('\t')
+  );
+  const tsv = [headers.join('\t'), ...rows].join('\n');
+
+  navigator.clipboard.writeText(tsv).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.classList.add('copied');
+    btn.innerHTML = btn.innerHTML.replace('Kopieer als tabel', '✓ Gekopieerd!');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = btn.innerHTML.replace('✓ Gekopieerd!', 'Kopieer als tabel');
+    }, 2500);
+  });
+}
+
+// ── View toggle ───────────────────────────────────────────────────────────────
+
+function setView(v) {
+  document.getElementById('view-cards').style.display = v === 'cards' ? 'block' : 'none';
+  document.getElementById('view-list').style.display  = v === 'list'  ? 'block' : 'none';
+  document.getElementById('btn-cards').classList.toggle('active', v === 'cards');
+  document.getElementById('btn-list').classList.toggle('active',  v === 'list');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+buildToc();
+buildCards();
+buildTable(VACANCIES);
+</script>
+</body>
+</html>
