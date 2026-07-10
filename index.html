@@ -603,7 +603,11 @@ function buildEduToc() {
   let html = `<a href="#featured-edu"><span class="dot" style="background:#f0c040;"></span>⭐ Featured (${feat.length})</a>`;
   Object.entries(ORGS).forEach(([name, o]) => {
     const c = counts[name] || '';
-    html += `<a href="#${o.anchor}"><span class="dot" style="background:${o.color};"></span>${name}${c ? ` (${c})` : ''}</a>`;
+    if (name === 'DBRE') {
+      html += `<a href="https://werkenbij.dbre.nl/" target="_blank"><span class="dot" style="background:${o.color};"></span>${name} ↗</a>`;
+    } else {
+      html += `<a href="#${o.anchor}"><span class="dot" style="background:${o.color};"></span>${name}${c ? ` (${c})` : ''}</a>`;
+    }
   });
   document.getElementById('toc-edu').innerHTML = html;
 }
