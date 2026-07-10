@@ -556,7 +556,7 @@ function buildEduCards() {
             <strong>Dynamische vacaturepagina</strong>
             De DBRE-vacatures worden via JavaScript geladen en zijn niet automatisch op te halen. Klik op de knop om direct naar de actuele vacatures te gaan.
           </div>
-          <a class="dbre-btn" href="https://werkenbij.dbre.nl/" target="_blank">${EXT} Bekijk DBRE vacatures</a>
+          <a class="dbre-btn" href="https://werkenbij.dbre.nl/vacaturebeschrijvingen/actuele-vacatures" target="_blank">${EXT} Bekijk DBRE vacatures</a>
         </div>
       </section>`;
       return;
@@ -604,7 +604,7 @@ function buildEduToc() {
   Object.entries(ORGS).forEach(([name, o]) => {
     const c = counts[name] || '';
     if (name === 'DBRE') {
-      html += `<a href="https://werkenbij.dbre.nl/" target="_blank"><span class="dot" style="background:${o.color};"></span>${name} ↗</a>`;
+      html += `<a href="https://werkenbij.dbre.nl/vacaturebeschrijvingen/actuele-vacatures" target="_blank"><span class="dot" style="background:${o.color};"></span>${name} ↗</a>`;
     } else {
       html += `<a href="#${o.anchor}"><span class="dot" style="background:${o.color};"></span>${name}${c ? ` (${c})` : ''}</a>`;
     }
