@@ -1,36 +1,21 @@
- name: Vacatures vernieuwen
-
-  "on":
-    workflow_dispatch:
-
+ name: refresh
+  on: workflow_dispatch
   permissions:
     contents: write
-
   jobs:
     refresh:
       runs-on: ubuntu-latest
-      timeout-minutes: 20
-
       steps:
         - uses: actions/checkout@v4
-
         - uses: actions/setup-python@v5
           with:
             python-version: '3.11'
-
-        - name: Installeer dependencies
-          run: pip install playwright requests beautifulsoup4 lxml
-
-        - name: Installeer Playwright browser
-          run: playwright install chromium --with-deps
-
-        - name: Scrape vacatures
-          run: python scripts/scrape.py
-
-        - name: Commit en push
-          run: |
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git config user.name "github-actions[bot]"
+        - run: pip install playwright requests beautifulsoup4 lxml
+        - run: playwright install chromium --with-deps
+        - run: python scripts/scrape.py
+        - run: |
+            git config user.email "actions@github.com"
+            git config user.name "GitHub Actions"
             git add index.html
-            git diff --cached --quiet || git commit -m "Vacatures bijgewerkt $(date '+%d-%m-%Y')"
+            git diff --cached --quiet || git commit -m "Vacatures bijgewerkt"
             git push
