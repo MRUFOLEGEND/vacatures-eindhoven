@@ -799,85 +799,72 @@ function buildEduSourcesPanel() {
     </div>`).join('');
 }
 
-// ── Refresh: Marketing via Indeed RSS ─────────────────────────────────────────
+// ── Refresh: Marketing via Indeed RSS (via rss2json.com) ──────────────────────
 async function refreshMktData() {
   const btn  = document.getElementById('mkt-refresh-btn');
   const icon = document.getElementById('mkt-spin-icon');
-  const msg  = document.getElementById('refresh-msg');
 
   btn.disabled = true;
   icon.classList.add('spin');
   setMsg('loading', 'Indeed-vacatures ophalen…');
 
-  const rssUrl = 'https://nl.indeed.com/rss?q=product+marketeer+OR+product+marketing+OR+product+manager+OR+marketeer+OR+performance+marketeer&l=Eindhoven&radius=30&sort=date&fromage=30';
-  const proxies = [
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(rssUrl),
-    'https://corsproxy.io/?' + encodeURIComponent(rssUrl),
-  ];
-
-  let text = null;
-  for (const proxy of proxies) {
-    try {
-      const res = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) continue;
-      text = await res.text();
-      break;
-    } catch { /* try next */ }
-  }
-
-  if (!text) {
-    btn.disabled = false;
-    icon.classList.remove('spin');
-    setMsg('err', 'Kon Indeed niet bereiken. Probeer later opnieuw of gebruik de zoeklink hieronder.');
-    return;
-  }
+  const rssUrl = 'https://nl.indeed.com/rss?q=product+marketeer+OR+product+manager+OR+marketeer+OR+performance+marketeer&l=Eindhoven&radius=30&sort=date&fromage=30';
+  const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl);
 
   try {
-    const xml   = new DOMParser().parseFromString(text, 'text/xml');
-    const items = xml.querySelectorAll('item');
-    const fresh = [];
+    const controller = new AbortController();
+    const timer = setTimeout(function() { controller.abort(); }, 15000);
+    let res;
+    try {
+      res = await fetch(apiUrl, { signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
 
-    items.forEach(item => {
-      const rawTitle = item.querySelector('title')?.textContent?.trim() || '';
-      const guid     = item.querySelector('guid')?.textContent?.trim()  || '';
-      const link     = item.querySelector('link')?.nextSibling?.textContent?.trim() || guid;
-      const descRaw  = item.querySelector('description')?.textContent || '';
-      const pubDate  = item.querySelector('pubDate')?.textContent || '';
+    if (!res.ok) throw new Error('HTTP ' + res.status);
 
-      // Title format: "Job Title - Company - City, Province"
-      const parts   = rawTitle.split(' - ');
-      const title   = parts[0]?.trim() || rawTitle;
-      const company = parts.length >= 3 ? parts.slice(1, -1).join(' - ').trim() : (parts[1]?.trim() || '–');
-      const loc     = parts[parts.length - 1]?.replace(/,.*$/, '').trim() || 'Eindhoven-regio';
+    const data = await res.json();
 
-      // Strip HTML from description
-      const tmp  = document.createElement('div');
-      tmp.innerHTML = descRaw;
+    if (data.status !== 'ok' || !Array.isArray(data.items) || data.items.length === 0) {
+      throw new Error(data.message || 'Geen vacatures gevonden in de feed');
+    }
+
+    const fresh = data.items.map(function(item) {
+      const rawTitle = (item.title || '').trim();
+      const parts    = rawTitle.split(' - ');
+      const title    = parts[0]?.trim() || rawTitle;
+      const company  = item.author || (parts.length >= 3 ? parts.slice(1, -1).join(' - ').trim() : (parts[1]?.trim() || '–'));
+      const loc      = (parts[parts.length - 1] || 'Eindhoven-regio').replace(/,.*$/, '').trim();
+
+      const tmp = document.createElement('div');
+      tmp.innerHTML = item.description || '';
       const desc = tmp.textContent.replace(/\s+/g, ' ').trim().substring(0, 200);
 
-      // Format date
       let posted = 'Recent';
-      if (pubDate) {
-        const d = new Date(pubDate);
+      if (item.pubDate) {
+        const d = new Date(item.pubDate);
         if (!isNaN(d)) posted = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
       }
 
-      fresh.push({ title, company, location: loc, salary: '–', type: 'Fulltime',
-                   source: 'Indeed (live)', posted, url: link || guid, desc });
+      return { title, company, location: loc, salary: '–', type: 'Fulltime',
+               source: 'Indeed (live)', posted, url: item.link || '', desc };
     });
 
-    if (fresh.length === 0) throw new Error('Geen items in RSS-feed');
-
     MKT.length = 0;
-    fresh.forEach(v => MKT.push(v));
+    fresh.forEach(function(v) { MKT.push(v); });
     renderMktTable(MKT);
 
     const now = new Date();
     const ts  = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('last-refreshed-txt').textContent = `Vernieuwd op ${now.toLocaleDateString('nl-NL')} om ${ts}`;
-    setMsg('ok', `✓ ${fresh.length} vacatures opgehaald via Indeed`);
-  } catch (e) {
-    setMsg('err', `Fout bij verwerken RSS: ${e.message}`);
+    document.getElementById('last-refreshed-txt').textContent =
+      'Vernieuwd op ' + now.toLocaleDateString('nl-NL') + ' om ' + ts;
+    setMsg('ok', '✓ ' + fresh.length + ' actuele vacatures opgehaald via Indeed');
+
+  } catch(e) {
+    const msg = e.name === 'AbortError'
+      ? 'Timeout – Indeed niet bereikbaar. Gebruik de zoeklink hieronder.'
+      : 'Kon niet vernieuwen: ' + e.message + ' – gebruik de zoeklink hieronder.';
+    setMsg('err', msg);
   }
 
   btn.disabled = false;
