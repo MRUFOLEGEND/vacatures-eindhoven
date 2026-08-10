@@ -1,0 +1,21 @@
+ name: refresh
+  on: workflow_dispatch
+  permissions:
+    contents: write
+  jobs:
+    refresh:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.11'
+        - run: pip install playwright requests beautifulsoup4 lxml
+        - run: playwright install chromium --with-deps
+        - run: python scripts/scrape.py
+        - run: |
+            git config user.email "actions@github.com"
+            git config user.name "GitHub Actions"
+            git add index.html
+            git diff --cached --quiet || git commit -m "Vacatures bijgewerkt"
+            git push
