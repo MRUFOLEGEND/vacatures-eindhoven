@@ -276,14 +276,69 @@
       border-top: 1px solid #30363d; padding-top: 16px;
       font-size: 11px; color: #8b949e; text-align: center;
     }
+
+    /* ── Refresh system ── */
+    .refresh-bar {
+      display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap;
+    }
+    .refresh-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #21262d; border: 1px solid #30363d; border-radius: 7px;
+      color: #c9d1d9; font-size: 12px; font-weight: 600;
+      padding: 6px 14px; cursor: pointer; transition: background .15s, border-color .15s;
+    }
+    .refresh-btn:hover:not(:disabled) { background: #2d333b; border-color: #58a6ff; color: #58a6ff; }
+    .refresh-btn:disabled { opacity: .55; cursor: default; }
+    .refresh-btn svg { width: 13px; height: 13px; }
+    .spin { animation: spin .8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .last-refreshed { font-size: 11px; color: #8b949e; }
+    .refresh-msg { font-size: 11.5px; padding: 3px 10px; border-radius: 6px; display: none; }
+    .refresh-msg.loading { display: inline; color: #58a6ff; }
+    .refresh-msg.ok  { display: inline; color: #3fb950; background: #1a2a1a; border: 1px solid #2ea04333; }
+    .refresh-msg.err { display: inline; color: #f85149; background: #2a1515; border: 1px solid #f8514933; }
+
+    /* ── Sources check panel ── */
+    .sources-panel {
+      max-width: 1440px; margin: 0 auto 18px;
+      background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+      padding: 16px 20px; display: none;
+    }
+    .sources-panel.open { display: block; }
+    .sources-panel h3 { font-size: 13px; font-weight: 700; color: #c9d1d9; margin-bottom: 6px; }
+    .sources-panel p  { font-size: 11.5px; color: #8b949e; margin-bottom: 12px; line-height: 1.5; }
+    .sources-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px;
+    }
+    .src-row {
+      display: flex; align-items: center; gap: 9px;
+      background: #0d1117; border: 1px solid #21262d; border-radius: 8px;
+      padding: 9px 13px;
+    }
+    .src-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .src-row-info { flex: 1; min-width: 0; }
+    .src-row-name { font-size: 12px; font-weight: 600; color: #c9d1d9; }
+    .src-row-hint { font-size: 10px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .src-open-btn {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 600; color: #58a6ff; text-decoration: none;
+      padding: 3px 9px; border: 1px solid #58a6ff44; border-radius: 5px;
+      transition: background .15s; white-space: nowrap; flex-shrink: 0;
+    }
+    .src-open-btn:hover { background: #1f2a38; border-color: #58a6ff; }
+    .src-open-btn svg { width: 10px; height: 10px; }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="badge-week">Week 29 juni – 6 juli 2026</div>
+  <div class="badge-week" id="week-badge">Week 29 juni – 6 juli 2026</div>
   <h1>Vacatureoverzicht Eindhoven-regio</h1>
-  <p>Actuele vacatures van 5 organisaties + marketing-zoekopdrachten · Gegenereerd op 6 juli 2026</p>
+  <p>Actuele vacatures van 5 organisaties + marketing-zoekopdrachten · <span id="header-date">Gegenereerd op 6 juli 2026</span></p>
+  <div class="refresh-bar">
+    <span class="last-refreshed" id="last-refreshed-txt">Gegevens zijn statisch · klik op Vernieuwen voor actuele data</span>
+    <span class="refresh-msg" id="refresh-msg"></span>
+  </div>
 </header>
 
 <!-- Main tab nav -->
@@ -303,6 +358,10 @@
 
   <div class="topbar">
     <nav class="toc" id="toc-edu"></nav>
+    <button class="refresh-btn" onclick="toggleEduSources()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"/></svg>
+      Controleer bronnen
+    </button>
     <div class="view-toggle">
       <button class="view-btn" id="edu-btn-cards" onclick="setView('edu','cards')">
         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5Zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5Zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5Zm8 0A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5Z"/></svg>
@@ -313,6 +372,12 @@
         Lijst
       </button>
     </div>
+  </div>
+
+  <div class="sources-panel" id="edu-sources-panel">
+    <h3>Bronnen controleren – Educatie &amp; Overheid</h3>
+    <p>Deze vacaturesites blokkeren automatisch ophalen (CORS). Open elke bron om nieuwe vacatures te bekijken en vraag Claude om de lijst bij te werken.</p>
+    <div class="sources-grid" id="edu-sources-grid"></div>
   </div>
 
   <div id="edu-cards" class="cards-view"></div>
@@ -364,6 +429,10 @@
       </div>
     </div>
     <div class="source-btns">
+      <button class="refresh-btn" id="mkt-refresh-btn" onclick="refreshMktData()" style="padding:7px 14px;">
+        <svg id="mkt-spin-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.001 7.001 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.501 5.501 0 0 0 8 2.5ZM1.705 8.005a.75.75 0 0 1 .834.656 5.501 5.501 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.001 7.001 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834Z"/></svg>
+        Vernieuwen via Indeed
+      </button>
       <a class="src-btn src-indeed" href="https://nl.indeed.com/vacatures?q=product+marketeer+OR+product+manager+OR+marketeer&l=Eindhoven&radius=30&sort=date" target="_blank">
         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13 4.487l-5.22 5.22a.749.749 0 0 1-1.06-1.06l5.22-5.22-1.086-1.086A.25.25 0 0 1 10.604 2Z"/></svg>
         Zoek op Indeed
@@ -408,8 +477,8 @@
 
 </div><!-- /tab-mkt -->
 
-<footer>
-  Gegenereerd op 6 juli 2026 · TU/e · Fontys · Summa · Gemeente Eindhoven · DBRE · Indeed.nl · Alle links openen in een nieuw tabblad
+<footer id="site-footer">
+  Basisdata: 6 juli 2026 · TU/e · Fontys · Summa · Gemeente Eindhoven · DBRE · Indeed.nl · Alle links openen in een nieuw tabblad
 </footer>
 
 <script>
@@ -705,6 +774,120 @@ function copyTable(tab) {
     btn.innerHTML = btn.innerHTML.replace(/Kopieer als tabel/, '✓ Gekopieerd!');
     setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2500);
   });
+}
+
+// ── Refresh: EDU sources panel ────────────────────────────────────────────────
+function toggleEduSources() {
+  const panel = document.getElementById('edu-sources-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) buildEduSourcesPanel();
+}
+
+function buildEduSourcesPanel() {
+  const grid = document.getElementById('edu-sources-grid');
+  if (grid.childElementCount > 0) return;
+  grid.innerHTML = Object.entries(ORGS).map(([name, o]) => `
+    <div class="src-row">
+      <div class="src-row-dot" style="background:${o.color};"></div>
+      <div class="src-row-info">
+        <div class="src-row-name">${name}</div>
+        <div class="src-row-hint">${o.src}</div>
+      </div>
+      <a class="src-open-btn" href="${o.src}" target="_blank">
+        Open ${EXT}
+      </a>
+    </div>`).join('');
+}
+
+// ── Refresh: Marketing via Indeed RSS ─────────────────────────────────────────
+async function refreshMktData() {
+  const btn  = document.getElementById('mkt-refresh-btn');
+  const icon = document.getElementById('mkt-spin-icon');
+  const msg  = document.getElementById('refresh-msg');
+
+  btn.disabled = true;
+  icon.classList.add('spin');
+  setMsg('loading', 'Indeed-vacatures ophalen…');
+
+  const rssUrl = 'https://nl.indeed.com/rss?q=product+marketeer+OR+product+marketing+OR+product+manager+OR+marketeer+OR+performance+marketeer&l=Eindhoven&radius=30&sort=date&fromage=30';
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(rssUrl),
+    'https://corsproxy.io/?' + encodeURIComponent(rssUrl),
+  ];
+
+  let text = null;
+  for (const proxy of proxies) {
+    try {
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      text = await res.text();
+      break;
+    } catch { /* try next */ }
+  }
+
+  if (!text) {
+    btn.disabled = false;
+    icon.classList.remove('spin');
+    setMsg('err', 'Kon Indeed niet bereiken. Probeer later opnieuw of gebruik de zoeklink hieronder.');
+    return;
+  }
+
+  try {
+    const xml   = new DOMParser().parseFromString(text, 'text/xml');
+    const items = xml.querySelectorAll('item');
+    const fresh = [];
+
+    items.forEach(item => {
+      const rawTitle = item.querySelector('title')?.textContent?.trim() || '';
+      const guid     = item.querySelector('guid')?.textContent?.trim()  || '';
+      const link     = item.querySelector('link')?.nextSibling?.textContent?.trim() || guid;
+      const descRaw  = item.querySelector('description')?.textContent || '';
+      const pubDate  = item.querySelector('pubDate')?.textContent || '';
+
+      // Title format: "Job Title - Company - City, Province"
+      const parts   = rawTitle.split(' - ');
+      const title   = parts[0]?.trim() || rawTitle;
+      const company = parts.length >= 3 ? parts.slice(1, -1).join(' - ').trim() : (parts[1]?.trim() || '–');
+      const loc     = parts[parts.length - 1]?.replace(/,.*$/, '').trim() || 'Eindhoven-regio';
+
+      // Strip HTML from description
+      const tmp  = document.createElement('div');
+      tmp.innerHTML = descRaw;
+      const desc = tmp.textContent.replace(/\s+/g, ' ').trim().substring(0, 200);
+
+      // Format date
+      let posted = 'Recent';
+      if (pubDate) {
+        const d = new Date(pubDate);
+        if (!isNaN(d)) posted = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      fresh.push({ title, company, location: loc, salary: '–', type: 'Fulltime',
+                   source: 'Indeed (live)', posted, url: link || guid, desc });
+    });
+
+    if (fresh.length === 0) throw new Error('Geen items in RSS-feed');
+
+    MKT.length = 0;
+    fresh.forEach(v => MKT.push(v));
+    renderMktTable(MKT);
+
+    const now = new Date();
+    const ts  = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('last-refreshed-txt').textContent = `Vernieuwd op ${now.toLocaleDateString('nl-NL')} om ${ts}`;
+    setMsg('ok', `✓ ${fresh.length} vacatures opgehaald via Indeed`);
+  } catch (e) {
+    setMsg('err', `Fout bij verwerken RSS: ${e.message}`);
+  }
+
+  btn.disabled = false;
+  icon.classList.remove('spin');
+}
+
+function setMsg(type, text) {
+  const el = document.getElementById('refresh-msg');
+  el.className = 'refresh-msg ' + type;
+  el.textContent = text;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
