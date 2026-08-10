@@ -1,6 +1,6 @@
  name: Vacatures vernieuwen
 
-  on:
+  "on":
     workflow_dispatch:
 
   permissions:
