@@ -21,6 +21,63 @@ UA      = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
            '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
 HEADERS = {'User-Agent': UA, 'Accept-Language': 'nl-NL,nl;q=0.9'}
 
+# Per site: URL-patroon waaraan echte vacature-links moeten voldoen
+SITE_CONFIG = [
+    {
+        'name': 'TU/e',
+        'org':  'TU/e',
+        'url':  'https://www.tue.nl/werken-bij-tue/vacatureoverzicht/',
+        # Vacature-URLs bevatten een slug na /vacatureoverzicht/
+        'link_pattern': r'tue\.nl/werken-bij-tue/vacatureoverzicht/[a-z]',
+        'min_slug_len': 8,   # minimale lengte van de slug na het laatste /
+    },
+    {
+        'name': 'Fontys',
+        'org':  'Fontys',
+        'url':  'https://werkenbijfontys.nl/fontys/vacatures/',
+        # Fontys vacature-URLs: /jobs/functie-titel-NUMMER/
+        'link_pattern': r'werkenbijfontys\.nl/jobs/.+-\d{5,}',
+        'min_slug_len': 10,
+    },
+    {
+        'name': 'Summa',
+        'org':  'Summa',
+        'url':  'https://summa-onderwijs.nl/vacatures/',
+        # Summa vacature-URLs: /vacatures/specifieke-slug/ (niet de lijstpagina zelf)
+        'link_pattern': r'summa-onderwijs\.nl/vacatures/[a-z].+/',
+        'min_slug_len': 8,
+    },
+    {
+        'name': 'Gemeente Eindhoven',
+        'org':  'Gemeente Eindhoven',
+        'url':  'https://www.werkenvooreindhoven.nl/vacature',
+        # Gemeente Eindhoven: /vacature/functie-naam
+        'link_pattern': r'werkenvooreindhoven\.nl/vacature/[a-z]',
+        'min_slug_len': 5,
+    },
+    {
+        'name': 'DBRE',
+        'org':  'DBRE',
+        'url':  'https://werkenbij.dbre.nl/vacaturebeschrijvingen/actuele-vacatures',
+        # DBRE: /vacaturebeschrijvingen/specifieke-vacature (niet de listpagina)
+        'link_pattern': r'werkenbij\.dbre\.nl/vacaturebeschrijvingen/(?!actuele-vacatures/?$)',
+        'min_slug_len': 3,
+    },
+]
+
+# Titels die sowieso geen vacature zijn (navigatie, buttons, etc.)
+SKIP_TITLES = re.compile(
+    r'^(ga naar de inhoud|skip to|fontys|solliciteren|vacancies|vacatures|'
+    r'nederlands|english|wij zijn fontys|mensen van fontys|locaties|actueel|'
+    r'doe de test|kijk hier voor alle|job alert|meer vacatures laden|'
+    r'meer instellingen|werken bij|werken bij summa|home|zoek|zoeken|'
+    r'filter|terug|vorige|volgende|sluiten|menu|navigatie|inloggen|'
+    r'registreren|contact|over ons|nieuws|events|cookie|privacy|sitemap|'
+    r'department of \w+|bachelor|master|phd programmes?|research|education|'
+    r'arbeidsmarkt|open application|open sollicitatie)$',
+    re.IGNORECASE
+)
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -73,7 +130,6 @@ def extract_jsonld_jobs(page) -> list:
     return jobs
 
 def parse_jsonld(o: dict, org: str, fallback_url: str) -> dict:
-    # salary
     salary = '–'
     bs = o.get('baseSalary', {})
     if isinstance(bs, dict):
@@ -85,13 +141,10 @@ def parse_jsonld(o: dict, org: str, fallback_url: str) -> dict:
             elif mn:
                 salary = f'€{int(float(mn)):,}'.replace(',', '.')
 
-    # hours
     emp_map = {'FULL_TIME': 'Voltijd', 'PART_TIME': 'Parttime',
-               'TEMPORARY': 'Tijdelijk', 'CONTRACTOR': 'ZZP',
-               'INTERN': 'Stage'}
+               'TEMPORARY': 'Tijdelijk', 'CONTRACTOR': 'ZZP', 'INTERN': 'Stage'}
     hours = emp_map.get(o.get('employmentType', ''), '–')
 
-    # location
     loc = o.get('jobLocation', {})
     if isinstance(loc, list):
         loc = loc[0] if loc else {}
@@ -113,9 +166,15 @@ def parse_jsonld(o: dict, org: str, fallback_url: str) -> dict:
     }
 
 
-# ── EDU scrapers ──────────────────────────────────────────────────────────────
+# ── EDU scraper ───────────────────────────────────────────────────────────────
 
-def scrape_edu_site(pw, name: str, url: str, org: str) -> list:
+def scrape_edu_site(pw, cfg: dict) -> list:
+    name         = cfg['name']
+    org          = cfg['org']
+    url          = cfg['url']
+    link_pattern = cfg['link_pattern']
+    min_slug_len = cfg['min_slug_len']
+
     print(f'  {name}...')
     browser = pw.chromium.launch(headless=True)
     ctx     = browser.new_context(user_agent=UA, locale='nl-NL')
@@ -126,35 +185,52 @@ def scrape_edu_site(pw, name: str, url: str, org: str) -> list:
         try:
             page.goto(url, wait_until='networkidle', timeout=30000)
         except PWTimeout:
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(4000)
 
-        # 1. JSON-LD structured data
+        # 1. JSON-LD structured data (meest betrouwbaar)
         lds = extract_jsonld_jobs(page)
         if lds:
             jobs = [parse_jsonld(o, org, url) for o in lds if o.get('title')]
             print(f'    ✓ {len(jobs)} via JSON-LD')
             return jobs
 
-        # 2. Vacancy links uit de DOM
-        raw = page.evaluate("""() => {
-            const SKIP = /facebook|twitter|linkedin|instagram|youtube|cookie|privacy|sitemap|contact|login|home|zoek|inloggen|registr/i;
-            const VAC  = /vacatur|job|opening|werken|functie|positie/i;
-            const seen = new Set();
-            const out  = [];
+        # 2. Site-specifieke URL-patroon matching
+        raw = page.evaluate("""(cfg) => {
+            const pattern   = new RegExp(cfg.linkPattern);
+            const minSlug   = cfg.minSlugLen;
+            const seen      = new Set();
+            const out       = [];
+
             document.querySelectorAll('a[href]').forEach(a => {
                 const href = a.href || '';
                 const text = (a.textContent || '').trim();
-                if (text.length < 4 || text.length > 120) return;
-                if (SKIP.test(text) || SKIP.test(href)) return;
-                if (!VAC.test(href) && !VAC.test(text)) return;
+
+                // URL moet overeenkomen met het vacature-patroon
+                if (!pattern.test(href)) return;
+
+                // Slug (laatste URL-segment) moet lang genoeg zijn
+                const slug = href.replace(/\/$/, '').split('/').pop() || '';
+                if (slug.length < minSlug) return;
+
+                // Titel: redelijke lengte
+                if (text.length < 8 || text.length > 130) return;
+
+                // Niet in navigatie/header/footer
+                if (a.closest('nav, header, footer, [role="navigation"], [aria-label="navigatie"]')) return;
+
                 if (seen.has(href)) return;
                 seen.add(href);
-                const parent = a.closest('li,article,.card,.job,.vacancy,tr') || a.parentElement;
+
+                const parent = a.closest('li, article, .card, .job, .vacancy, tr, [class*="job"], [class*="vacanc"]') || a.parentElement;
                 const ctx = parent ? parent.innerText.substring(0, 300) : '';
                 out.push({ title: text, url: href, ctx });
             });
-            return out.slice(0, 50);
-        }""")
+
+            return out.slice(0, 60);
+        }""", {'linkPattern': link_pattern, 'minSlugLen': min_slug_len})
+
+        # Filter titels die aantoonbaar geen vacature zijn
+        raw = [r for r in (raw or []) if not SKIP_TITLES.match(r['title'])]
 
         if raw:
             for r in raw:
@@ -172,7 +248,7 @@ def scrape_edu_site(pw, name: str, url: str, org: str) -> list:
                     'url':      r['url'],
                     'desc':     r.get('ctx', '')[:200],
                 })
-            print(f'    ✓ {len(jobs)} via links')
+            print(f'    ✓ {len(jobs)} vacatures')
         else:
             print(f'    ✗ geen vacatures gevonden')
 
@@ -185,20 +261,13 @@ def scrape_edu_site(pw, name: str, url: str, org: str) -> list:
 
 
 def scrape_all_edu(pw) -> list:
-    sources = [
-        ('TU/e',               'https://www.tue.nl/werken-bij-tue/vacatureoverzicht/',              'TU/e'),
-        ('Fontys',             'https://werkenbijfontys.nl/fontys/vacatures/',                      'Fontys'),
-        ('Summa',              'https://summa-onderwijs.nl/vacatures/',                              'Summa'),
-        ('Gemeente Eindhoven', 'https://www.werkenvooreindhoven.nl/vacature',                       'Gemeente Eindhoven'),
-        ('DBRE',               'https://werkenbij.dbre.nl/vacaturebeschrijvingen/actuele-vacatures','DBRE'),
-    ]
     all_jobs = []
-    for name, url, org in sources:
+    for cfg in SITE_CONFIG:
         try:
-            jobs = scrape_edu_site(pw, name, url, org)
+            jobs = scrape_edu_site(pw, cfg)
             all_jobs.extend(jobs)
         except Exception as e:
-            print(f'  ✗ {name}: {e}')
+            print(f'  ✗ {cfg["name"]}: {e}')
     return all_jobs
 
 
@@ -248,7 +317,6 @@ def jobs_to_js(jobs: list, var: str) -> str:
 def update_html(mkt: list, edu: list):
     html = INDEX.read_text(encoding='utf-8')
 
-    # Update MKT
     if mkt:
         html = re.sub(
             r'const MKT = \[.*?\];',
@@ -256,7 +324,6 @@ def update_html(mkt: list, edu: list):
             html, flags=re.DOTALL
         )
 
-    # Update EDU: keep featured items, replace the rest
     if edu:
         m = re.search(r'const EDU = \[(.*?)\];', html, re.DOTALL)
         if m:
@@ -281,7 +348,6 @@ def update_html(mkt: list, edu: list):
                 html, flags=re.DOTALL
             )
 
-    # Update datums
     today = datetime.now().strftime('%-d %B %Y')
     html = re.sub(r'Gegenereerd op [\d\w ]+\d{4}', f'Gegenereerd op {today}', html)
     html = re.sub(r'Basisdata: [\d\w ]+\d{4}',    f'Basisdata: {today}',     html)
@@ -295,7 +361,6 @@ def update_html(mkt: list, edu: list):
 def main():
     print('=== Vacatures scraper ===\n')
 
-    # MKT
     print('Marketing (Indeed):')
     mkt = []
     try:
@@ -304,13 +369,11 @@ def main():
     except Exception as e:
         print(f'  ✗ Fout: {e}')
 
-    # EDU
     print('\nEducatie & Overheid (Playwright):')
     edu = []
     with sync_playwright() as pw:
         edu = scrape_all_edu(pw)
 
-    # Write
     print(f'\nResultaat: MKT={len(mkt)}, EDU={len(edu)}')
     update_html(mkt or None, edu or None)
 
